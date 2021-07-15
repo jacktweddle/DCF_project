@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import h5py
 import unit_conversions as uc
-import matplotlib.pyplot as plt
 
 
 def convert(func, x):
@@ -51,40 +50,63 @@ def create_file(group, dataset, orientation, data):
         new_f.write('DFXX $ DCF (microSv/h per n/cm2/s)\n')
         new_f.write('\n'.join(new_dcf))
 
+def main():
+    dcffile = h5py.File('DCFfile.h5', 'r')
+    print(dcffile.keys(), '\n')
+    while True:
+        input_group = str(input('Which data group would you like? Please enter without the /.\n'))
+        if input_group in ['ESS', 'NCRP38', 'ICRP116']:
+            group = dcffile.get('/' + input_group)
+            print(group.keys(), '\n')
+            while True:
+                input_dataset = str(input('Which dataset would you like? Please enter without the /.\n'))
+                if input_dataset in ['protons', 'photons', 'neutrons', 'electrons', 'positrons', 'muon-', 'muon+', 'pion-', 'pion+', 'helium']:
+                    path = '/' + input_group + '/' + input_dataset
+                    break
+                else:
+                    print('Invalid input, try again.')
+            break
+        else:
+            print('Invalid input, try again.')
+    
+    if input_group == 'ESS':
+        data = pd.DataFrame(dcffile.get(path), columns=['E (MeV)', 'DCF (microSv/h per n/cm2/s)']).reset_index(drop=True)
+        orientation = 'ISO'
+        data.plot(kind='line', x='E (MeV)', y='DCF (microSv/h per n/cm2/s)', ylabel='DCF (microSv/h per n/cm2/s)', legend=False)
+    if input_group == 'NCRP38':
+        data = pd.DataFrame(dcffile.get(path), columns=['E (MeV)', 'DCF (microSv/h per n/cm2/s)']).reset_index(drop=True)
+        orientation = 'ISO'
+        dose = np.array(data['DCF (microSv/h per n/cm2/s)'])
+        convert(rem_to_microsv, dose)
+        data['DCF (microSv/h per n/cm2/s)'] = dose
+        data.plot(kind='line', x='E (MeV)', y='DCF (microSv/h per n/cm2/s)', ylabel='DCF (microSv/h per n/cm2/s)', legend=False)
+    if input_group == 'ICRP116':
+        if input_dataset in ['protons', 'photons', 'neutrons']:
+            while True:
+                orientation = str(input('Which orientation would you like? Select from AP, PA, LLAT, RLAT, ROT, ISO.\n'))
+                if orientation in ['AP', 'PA', 'LLAT', 'RLAT', 'ROT', 'ISO']:
+                    all_data = pd.DataFrame(dcffile.get(path), columns=['E (MeV)', 'AP', 'PA', 'LLAT', 'RLAT', 'ROT', 'ISO']).reset_index(drop=True)
+                    break
+                else:
+                    print('Invalid input, try again.')
+        if input_dataset in ['electrons', 'positrons', 'muon-', 'muon+', 'pion-', 'pion+', 'helium']:
+            while True:
+                orientation = str(input('Which orientation would you like? Select from AP, PA, ISO.\n'))
+                if orientation in ['AP', 'PA', 'LLAT', 'RLAT', 'ROT', 'ISO']:
+                    all_data = pd.DataFrame(dcffile.get(path), columns=['E (MeV)', 'AP', 'PA', 'ISO']).reset_index(drop=True)
+                    break
+                else:
+                    print('Invalid input, try again.')
+        data = all_data.loc[:, ('E (MeV)', orientation)]
+        dose = np.array(data.loc[:, orientation])
+        convert(psv_cm2_to_microsv_hour, dose)
+        data.loc[:, orientation] = dose
+        data.plot(kind='line', x='E (MeV)', y=orientation, ylabel='DCF (microSv/h per n/cm2/s)', legend=False)
+    
+    dcffile.close()
+    
+    create_file(input_group, input_dataset, orientation, data)
+    print('Your data has been plotted and a file has now been created! Look for group_dataset_mcnp.txt')
 
-dcffile = h5py.File('DCFfile.h5', 'r')
-print(dcffile.keys(), '\n')
-input_group = str(input('Which data group would you like? Please enter without the /.\n'))
-group = dcffile.get('/' + input_group)
-print(group.keys(), '\n')
-input_dataset = str(input('Which dataset would you like? Please enter without the /.\n'))
-path = '/' + input_group + '/' + input_dataset
-
-if input_group == 'ESS':
-    data = pd.DataFrame(dcffile.get(path), columns=['E (MeV)', 'DCF (microSv/h per n/cm2/s)']).reset_index(drop=True)
-    orientation = 'ISO'
-    data.plot(kind='line', x='E (MeV)', y='DCF (microSv/h per n/cm2/s)', ylabel='DCF (microSv/h per n/cm2/s)', legend=False)
-if input_group == 'NCRP38':
-    data = pd.DataFrame(dcffile.get(path), columns=['E (MeV)', 'DCF (microSv/h per n/cm2/s)']).reset_index(drop=True)
-    orientation = 'ISO'
-    dose = np.array(data['DCF (microSv/h per n/cm2/s)'])
-    convert(rem_to_microsv, dose)
-    data['DCF (microSv/h per n/cm2/s)'] = dose
-    data.plot(kind='line', x='E (MeV)', y='DCF (microSv/h per n/cm2/s)', ylabel='DCF (microSv/h per n/cm2/s)', legend=False)
-if input_group == 'ICRP116':
-    if input_dataset in ['protons', 'photons', 'neutrons']:
-        orientation = str(input('Which orientation would you like? Select from AP, PA, LLAT, RLAT, ROT, ISO.\n'))
-        all_data = pd.DataFrame(dcffile.get(path), columns=['E (MeV)', 'AP', 'PA', 'LLAT', 'RLAT', 'ROT', 'ISO']).reset_index(drop=True)
-    else:
-        orientation = str(input('Which orientation would you like? Select from AP, PA, ISO.\n'))
-        all_data = pd.DataFrame(dcffile.get(path), columns=['E (MeV)', 'AP', 'PA', 'ISO']).reset_index(drop=True)
-    data = all_data.loc[:, ('E (MeV)', orientation)]
-    dose = np.array(data.loc[:, orientation])
-    convert(psv_cm2_to_microsv_hour, dose)
-    data.loc[:, orientation] = dose
-    data.plot(kind='line', x='E (MeV)', y=orientation, ylabel='DCF (microSv/h per n/cm2/s)', legend=False)
-
-dcffile.close()
-
-create_file(input_group, input_dataset, orientation, data)
-print('Your data has been plotted and a file has now been created! Look for group_dataset_mcnp.txt')
+if __name__ == '__main__':
+    main()
