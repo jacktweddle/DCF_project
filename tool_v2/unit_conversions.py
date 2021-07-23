@@ -6,7 +6,7 @@ import pandas as pd
 
 def cel_to_K(x):
     '''Convert Celsius to Kelvin'''
-    if type(x) in [np.ndarray, pd.Series]:
+    if type(x) is np.ndarray:
         if x.any() < -273.15:
             raise ValueError('Cannot have temperature lower than -273.15 Celsius!')
     if type(x) in [int, float, np.int64, np.float64] and x < -273.15:
@@ -50,6 +50,78 @@ def sv_to_rem(x):
     if type(x) not in [int, float, np.ndarray, np.int64, np.float64]:
         raise TypeError('Only valid integers or floats can be passed.')
     return x * 100
+
+
+def rem_to_microsv(x):
+    '''Converts rem to microsv'''
+    if type(x) is np.ndarray:
+        if x.any() < 0:
+            raise ValueError('Negative dosage is not physical!')
+    if type(x) in [int, float, np.int64, np.float64] and x < 0:
+        raise ValueError('Negative dosage is not physical!')
+    if type(x) not in [int, float, np.ndarray, np.int64, np.float64]:
+        raise TypeError('Only valid integers or floats can be passed.')
+    return micro(rem_to_sv(x))
+
+
+def microsv_to_rem(x):
+    '''Converts microsv to rem'''
+    if type(x) is np.ndarray:
+        if x.any() < 0:
+            raise ValueError('Negative dosage is not physical!')
+    if type(x) in [int, float, np.int64, np.float64] and x < 0:
+        raise ValueError('Negative dosage is not physical!')
+    if type(x) not in [int, float, np.ndarray, np.int64, np.float64]:
+        raise TypeError('Only valid integers or floats can be passed.')
+    return mega(sv_to_rem(x))
+
+
+def psv_cm2_to_microsv_hour(x):
+    '''Converts psv cm2 to microsv/hour per n/cm2/s'''
+    if type(x) is np.ndarray:
+        if x.any() < 0:
+            raise ValueError('Negative dosage is not physical!')
+    if type(x) in [int, float, np.int64, np.float64] and x < 0:
+        raise ValueError('Negative dosage is not physical!')
+    if type(x) not in [int, float, np.ndarray, np.int64, np.float64]:
+        raise TypeError('Only valid integers or floats can be passed.')
+    return mega(3600 * x)
+
+
+def microsv_hour_to_psv_cm2(x):
+    '''Converts microsv/hour per n/cm2/s to psv cm2'''
+    if type(x) is np.ndarray:
+        if x.any() < 0:
+            raise ValueError('Negative dosage is not physical!')
+    if type(x) in [int, float, np.int64, np.float64] and x < 0:
+        raise ValueError('Negative dosage is not physical!')
+    if type(x) not in [int, float, np.ndarray, np.int64, np.float64]:
+        raise TypeError('Only valid integers or floats can be passed.')
+    return micro(x / 3600)
+
+
+def psv_cm2_to_rem_hour(x):
+    '''Converts psv cm2 to rem/hour per n/cm2/s'''
+    if type(x) is np.ndarray:
+        if x.any() < 0:
+            raise ValueError('Negative dosage is not physical!')
+    if type(x) in [int, float, np.int64, np.float64] and x < 0:
+        raise ValueError('Negative dosage is not physical!')
+    if type(x) not in [int, float, np.ndarray, np.int64, np.float64]:
+        raise TypeError('Only valid integers or floats can be passed.')
+    return tera(3600 * x) * 100
+
+
+def rem_hour_to_psv_cm2(x):
+    '''Converts rem/hour per n/cm2/s to psv cm2'''
+    if type(x) is np.ndarray:
+        if x.any() < 0:
+            raise ValueError('Negative dosage is not physical!')
+    if type(x) in [int, float, np.int64, np.float64] and x < 0:
+        raise ValueError('Negative dosage is not physical!')
+    if type(x) not in [int, float, np.ndarray, np.int64, np.float64]:
+        raise TypeError('Only valid integers or floats can be passed.')
+    return pico(x / 3600) / 100
 
 
 def curie_to_bq(x):
